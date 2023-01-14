@@ -2,4 +2,7 @@ node_modules
 # Keep environment variables out of version control
 .env
 bin
+.vscode
+docker-compose.yml
+docker-compose.debug.yml
 ```
