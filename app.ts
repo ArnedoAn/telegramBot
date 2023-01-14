@@ -13,7 +13,7 @@ import opRouter, {
   getSaldo,
 } from "./routes/operations";
 
-const token = "5913355394:AAHsMG4wXH3c6l5aehdRf_GLiQ7rUsIe48M";
+const token = process.env.TTOKEN!;
 const app = express();
 const bot = new TelegramBot(token, { polling: true });
 
