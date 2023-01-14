@@ -130,7 +130,7 @@ export async function registerOperation(count: number, id: string) {
   try {
     const result = await prisma.historial.create({
       data: {
-        fecha: setUTCDate(new Date()) ,
+        fecha: setUTCDate(new Date()),
         monto: count * TARIFA,
         tarjetaId: id,
       },
@@ -143,13 +143,12 @@ export async function registerOperation(count: number, id: string) {
   }
 }
 
-
 // menos 10 horas
 function setUTCDate(date: Date) {
-  const offset = date.getTimezoneOffset();	// offset in minutes
-  const offsetInMs = offset * 60 * 1000;	// offset in milliseconds
-  const utc = date.getTime() + offsetInMs;	// utc timestamp
-  const newDate = new Date(utc - 10 * 60 * 60 * 1000);	// create new Date object for different city
+  const offset = date.getTimezoneOffset(); // offset in minutes
+  const offsetInMs = offset * 60 * 1000; // offset in milliseconds
+  const utc = date.getTime() + offsetInMs; // utc timestamp
+  const newDate = new Date(utc - 10 * 60 * 60 * 1000); // create new Date object for different city
   return newDate;
 }
 
@@ -179,7 +178,7 @@ export async function getHistorial(id: string) {
       },
     });
     console.log(result);
-    return result;
+    return (result);
   } catch (err) {
     console.log(err);
   }
@@ -201,7 +200,7 @@ export async function deleteHistorial(id: string) {
 
 export async function deleteTarjeta(id: string) {
   try {
-    const result = await prisma.tarjeta.deleteMany({
+    const result = await prisma.tarjeta.delete({
       where: {
         id: id,
       },
