@@ -57,86 +57,252 @@ app.use((0, cookie_parser_1.default)());
 app.use(express_1.default.static(path_1.default.join(__dirname, "public")));
 app.use("/", operations_1.default);
 //Bot manage
-bot.onText(/\/start (.+)/, (msg, match) => __awaiter(void 0, void 0, void 0, function* () {
+// bot.onText(/\/test/, (msg) => {
+//   const chatId = msg.chat.id;
+//   const options = {
+//     reply_markup: {
+//       keyboard: [[{ text: "Menos" }, { text: "Más" }]],
+//       resize_keyboard: true,
+//     },
+//   };
+//   bot.sendMessage(chatId, "Bienvenido al **bot**. ¿Qué deseas hacer? ", options,);
+// });
+bot.onText(/\/start/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
     const chatId = msg.chat.id;
-    console.log(match[1]);
-    const result = yield (0, operations_1.firstRun)(parseFloat(match[1]), chatId.toString());
-    if (result) {
-        bot.sendMessage(chatId, `Tu saldo actual es de ${match[1]}`);
+    const options = {
+        reply_markup: {
+            keyboard: [
+                [{ text: "/init" }, { text: "/saldo" }],
+                [{ text: "/más" }, { text: "/menos" }],
+                [{ text: "/actualizar" }, { text: "/historial" }],
+                [{ text: "/borrarhistorial" }, { text: "/borrartarjeta" }],
+            ],
+            resize_keyboard: true,
+        },
+    };
+    const siTarjeta = yield (0, operations_1.getSaldo)(chatId.toString());
+    if (siTarjeta != null) {
+        bot.sendMessage(chatId, `Ya tienes una tarjeta registrada, tu saldo actual es de ${siTarjeta.saldoDisponible}`, options);
     }
     else {
-        bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+        bot.sendMessage(chatId, "Bienvenido al bot. ¿Qué deseas hacer?", options);
     }
 }));
-bot.onText(/\/mas (.+)/, (msg, match) => __awaiter(void 0, void 0, void 0, function* () {
+bot.onText(/\/init/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
     const chatId = msg.chat.id;
-    const resp = parseFloat(match[1]); // the captured "whatever"
-    const result = yield (0, operations_1.operation)(resp, 3000, chatId.toString());
-    if (result.status === "success") {
-        yield (0, operations_1.registerOperation)(resp, chatId.toString());
-        bot.sendMessage(chatId, `Se han agregado ${resp * 3000} pesos a tu tarjeta, tu saldo actual es de ${result.saldo}`);
+    const siTarjeta = yield (0, operations_1.getSaldo)(chatId.toString());
+    if (siTarjeta != null) {
+        bot.sendMessage(chatId, `Ya tienes una tarjeta registrada, tu saldo actual es de ${siTarjeta.saldoDisponible}`);
     }
     else {
-        bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+        const count = yield bot.sendMessage(chatId, `Ingresa tu saldo inicial:`, {
+            reply_markup: {
+                force_reply: true,
+            },
+        });
+        bot.onReplyToMessage(chatId, count.message_id, (message) => __awaiter(void 0, void 0, void 0, function* () {
+            const text = message.text ? message.text : "0";
+            console.log(text);
+            const result = yield (0, operations_1.firstRun)(parseFloat(text), chatId.toString());
+            if (result) {
+                yield bot.sendMessage(chatId, `Tu saldo actual es de ${parseFloat(text)}.`);
+            }
+            else {
+                yield bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
+            }
+        }));
     }
 }));
-bot.onText(/\/menos (.+)/, (msg, match) => __awaiter(void 0, void 0, void 0, function* () {
+bot.onText(/\/más/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
+    if ((yield verifyUser(msg.chat.id.toString())) == false) {
+        console.log("no tiene tarjeta");
+        bot.sendMessage(msg.chat.id, `No tienes una tarjeta registrada, usa el comando /init para crear una.`);
+        return;
+    }
     const chatId = msg.chat.id;
-    const resp = parseFloat(match[1]); // the captured "whatever"
-    const result = yield (0, operations_1.operation)(resp * -1, 3000, chatId.toString());
-    if (result.status === "success") {
-        yield (0, operations_1.registerOperation)(resp * -1, chatId.toString());
-        bot.sendMessage(chatId, `Se han restado ${resp * 3000} pesos a tu tarjeta, tu saldo actual es de ${result.saldo}`);
+    const ans = yield bot.sendMessage(chatId, "Cantidad de pasajes", {
+        reply_markup: {
+            force_reply: true,
+        },
+    });
+    bot.onReplyToMessage(chatId, ans.message_id, (message) => __awaiter(void 0, void 0, void 0, function* () {
+        const resp = message.text ? parseFloat(message.text) : 0;
+        const result = yield (0, operations_1.operation)(resp, 3000, chatId.toString());
+        if (result.status === "success") {
+            yield (0, operations_1.registerOperation)(resp, chatId.toString());
+            bot.sendMessage(chatId, `Se han agregado ${resp * 3000} pesos a tu tarjeta, tu saldo actual es de ${result.saldo}.`);
+        }
+        else {
+            bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
+        }
+    }));
+}));
+bot.onText(/\/mas/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
+    if ((yield verifyUser(msg.chat.id.toString())) == false) {
+        console.log("no tiene tarjeta");
+        bot.sendMessage(msg.chat.id, `No tienes una tarjeta registrada, usa el comando /init para crear una.`);
+        return;
     }
-    else {
-        bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+    const chatId = msg.chat.id;
+    const ans = yield bot.sendMessage(chatId, "Cantidad de pasajes", {
+        reply_markup: {
+            force_reply: true,
+        },
+    });
+    bot.onReplyToMessage(chatId, ans.message_id, (message) => __awaiter(void 0, void 0, void 0, function* () {
+        const resp = message.text ? parseFloat(message.text) : 0;
+        const result = yield (0, operations_1.operation)(resp, 3000, chatId.toString());
+        if (result.status === "success") {
+            yield (0, operations_1.registerOperation)(resp, chatId.toString());
+            bot.sendMessage(chatId, `Se han agregado ${resp * 3000} pesos a tu tarjeta, tu saldo actual es de ${result.saldo}.`);
+        }
+        else {
+            bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
+        }
+    }));
+}));
+bot.onText(/\/menos/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
+    if ((yield verifyUser(msg.chat.id.toString())) == false) {
+        console.log("no tiene tarjeta");
+        bot.sendMessage(msg.chat.id, `No tienes una tarjeta registrada, usa el comando /init para crear una.`);
+        return;
     }
+    const chatId = msg.chat.id;
+    const ans = yield bot.sendMessage(chatId, "Cantidad de pasajes:", {
+        reply_markup: {
+            force_reply: true,
+        },
+    });
+    bot.onReplyToMessage(chatId, ans.message_id, (message) => __awaiter(void 0, void 0, void 0, function* () {
+        const resp = message.text ? parseFloat(message.text) : 0;
+        const result = yield (0, operations_1.operation)(resp, 3000 * -1, chatId.toString());
+        if (result.status === "success") {
+            yield (0, operations_1.registerOperation)(resp * -1, chatId.toString());
+            bot.sendMessage(chatId, `Se han restado ${resp * 3000 * -1} pesos a tu tarjeta, tu saldo actual es de ${result.saldo}.`);
+        }
+        else {
+            bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
+        }
+    }));
 }));
 bot.onText(/\/saldo/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
+    if ((yield verifyUser(msg.chat.id.toString())) == false) {
+        console.log("no tiene tarjeta");
+        bot.sendMessage(msg.chat.id, `No tienes una tarjeta registrada, usa el comando /init para crear una.`);
+        return;
+    }
     const chatId = msg.chat.id;
     const result = yield (0, operations_1.getSaldo)(chatId.toString());
-    bot.sendMessage(chatId, `Tu saldo actual es de ${result.saldoDisponible}`);
-}));
-bot.onText(/\/actualizar  (.+)/, (msg, match) => __awaiter(void 0, void 0, void 0, function* () {
-    const chatId = msg.chat.id;
-    const result = yield (0, operations_1.setSaldo)(parseFloat(match[1]), chatId.toString());
-    if (result) {
-        bot.sendMessage(chatId, `Tu saldo actual es de ${match[1]}`);
+    if (result == null) {
+        bot.sendMessage(chatId, `No tienes una tarjeta registrada, usa el comando /init para crear una.`);
     }
     else {
-        bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+        bot.sendMessage(chatId, `Tu saldo actual es de ${result.saldoDisponible}.`);
     }
 }));
+bot.onText(/\/actualizar/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
+    if ((yield verifyUser(msg.chat.id.toString())) == false) {
+        console.log("no tiene tarjeta");
+        bot.sendMessage(msg.chat.id, `No tienes una tarjeta registrada, usa el comando /init para crear una.`);
+        return;
+    }
+    const chatId = msg.chat.id;
+    const ans = yield bot.sendMessage(chatId, "Nuevo saldo:", {
+        reply_markup: {
+            force_reply: true,
+        },
+    });
+    bot.onReplyToMessage(chatId, ans.message_id, (message) => __awaiter(void 0, void 0, void 0, function* () {
+        const resp = message.text ? parseFloat(message.text) : 0;
+        const result = yield (0, operations_1.setSaldo)(resp, chatId.toString());
+        if (result) {
+            bot.sendMessage(chatId, `Actualizado. Tu saldo actual es de ${resp}.`);
+        }
+        else {
+            bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+        }
+    }));
+}));
 bot.onText(/\/borrarhistorial/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
+    if ((yield verifyUser(msg.chat.id.toString())) == false) {
+        console.log("no tiene tarjeta");
+        bot.sendMessage(msg.chat.id, `No tienes una tarjeta registrada, usa el comando /init para crear una.`);
+        return;
+    }
     const chatId = msg.chat.id;
     const result = yield (0, operations_1.deleteHistorial)(chatId.toString());
     if (result) {
-        bot.sendMessage(chatId, `Historial borrado`);
+        bot.sendMessage(chatId, `Historial borrado.`);
     }
     else {
-        bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+        bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
     }
 }));
 bot.onText(/\/borrartarjeta/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
+    if ((yield verifyUser(msg.chat.id.toString())) == false) {
+        console.log("no tiene tarjeta");
+        bot.sendMessage(msg.chat.id, `No tienes una tarjeta registrada, usa el comando /init para crear una.`);
+        return;
+    }
     const chatId = msg.chat.id;
     const result = yield (0, operations_1.deleteTarjeta)(chatId.toString());
     if (result) {
-        bot.sendMessage(chatId, `Tarjeta borrada`);
+        bot.sendMessage(chatId, `Tarjeta borrada.`);
     }
     else {
-        bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+        bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
     }
 }));
 bot.onText(/\/historial/, (msg) => __awaiter(void 0, void 0, void 0, function* () {
+    if ((yield verifyUser(msg.chat.id.toString())) == false) {
+        console.log("no tiene tarjeta");
+        bot.sendMessage(msg.chat.id, `No tienes una tarjeta registrada, usa el comando /init para crear una.`);
+        return;
+    }
     const chatId = msg.chat.id;
     const result = yield (0, operations_1.getHistorial)(chatId.toString());
     if (result) {
-        bot.sendMessage(chatId, `Historial: ${result}`);
+        bot.sendMessage(chatId, `Historial: \n${result.map(({ fecha, monto }) => `${formatDate(fecha)} || ${monto}\n`)}`);
     }
     else {
-        bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+        bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
     }
 }));
+function verifyUser(chatId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const result = yield (0, operations_1.getSaldo)(chatId);
+        if (result) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    });
+}
+//funcion para manejar fechas
+function formatDate(date) {
+    let monthNames = [
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre",
+    ];
+    let day = date.getDate();
+    let monthIndex = date.getMonth();
+    let year = date.getFullYear();
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    let seconds = date.getSeconds();
+    return `${day < 10 ? "0" + day : day}/${monthNames[monthIndex]}/${year} ${hours + 5}:${minutes}:${seconds}`;
+}
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
     next((0, http_errors_1.default)(404));

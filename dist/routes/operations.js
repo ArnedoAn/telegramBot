@@ -200,7 +200,7 @@ function getHistorial(id) {
                 },
             });
             console.log(result);
-            return result;
+            return (result);
         }
         catch (err) {
             console.log(err);
@@ -228,7 +228,7 @@ exports.deleteHistorial = deleteHistorial;
 function deleteTarjeta(id) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const result = yield prisma.tarjeta.deleteMany({
+            const result = yield prisma.tarjeta.delete({
                 where: {
                     id: id,
                 },
