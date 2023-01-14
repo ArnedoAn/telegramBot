@@ -11,6 +11,11 @@ import opRouter, {
   operation,
   registerOperation,
   getSaldo,
+  setSaldo,
+  firstRun,
+  deleteHistorial,
+  deleteTarjeta,
+  getHistorial,
 } from "./routes/operations";
 
 const token = process.env.TTOKEN!;
@@ -30,12 +35,24 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/", opRouter);
 
 //Bot manage
+
+bot.onText(/\/start (.+)/, async (msg, match) => {
+  const chatId = msg.chat.id;
+  console.log(match![1]);
+  const result = await firstRun(parseFloat(match![1]),chatId.toString());
+  if (result) {
+    bot.sendMessage(chatId, `Tu saldo actual es de ${match![1]}`);
+  } else {
+    bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+  }
+});
+
 bot.onText(/\/mas (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const resp = parseFloat(match![1]); // the captured "whatever"
-  const result = await operation(resp, 3000);
+  const result = await operation(resp, 3000, chatId.toString());
   if (result.status === "success") {
-    await registerOperation(resp);
+    await registerOperation(resp,chatId.toString());
     bot.sendMessage(
       chatId,
       `Se han agregado ${
@@ -50,9 +67,9 @@ bot.onText(/\/mas (.+)/, async (msg, match) => {
 bot.onText(/\/menos (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const resp = parseFloat(match![1]); // the captured "whatever"
-  const result = await operation(resp * -1, 3000);
+  const result = await operation(resp * -1, 3000,chatId.toString());
   if (result.status === "success") {
-    await registerOperation(resp * -1);
+    await registerOperation(resp * -1,chatId.toString());
     bot.sendMessage(
       chatId,
       `Se han restado ${
@@ -64,10 +81,50 @@ bot.onText(/\/menos (.+)/, async (msg, match) => {
   }
 });
 
-bot.onText(/\/saldo/, async (msg, match) => {
+bot.onText(/\/saldo/, async (msg) => {
   const chatId = msg.chat.id;
-  const result = await getSaldo();
+  const result = await getSaldo(chatId.toString());
   bot.sendMessage(chatId, `Tu saldo actual es de ${result!.saldoDisponible}`);
+});
+
+bot.onText(/\/actualizar  (.+)/, async (msg, match) => {
+  const chatId = msg.chat.id;
+  const result = await setSaldo(parseFloat(match![1]),chatId.toString());
+  if (result) {
+    bot.sendMessage(chatId, `Tu saldo actual es de ${match![1]}`);
+  } else {
+    bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+  }
+});
+
+bot.onText(/\/borrarhistorial/, async (msg) => {
+  const chatId = msg.chat.id;
+  const result = await deleteHistorial(chatId.toString());
+  if (result) {
+    bot.sendMessage(chatId, `Historial borrado`);
+  } else {
+    bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+  }
+});
+
+bot.onText(/\/borrartarjeta/, async (msg) => {
+  const chatId = msg.chat.id;
+  const result = await deleteTarjeta(chatId.toString());
+  if (result) {
+    bot.sendMessage(chatId, `Tarjeta borrada`);
+  } else {
+    bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+  }
+});
+
+bot.onText(/\/historial/, async (msg) => {
+  const chatId = msg.chat.id;
+  const result = await getHistorial(chatId.toString());
+  if (result) {
+    bot.sendMessage(chatId, `Historial: ${result}`);
+  } else {
+    bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
+  }
 });
 
 // catch 404 and forward to error handler
