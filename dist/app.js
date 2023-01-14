@@ -44,7 +44,7 @@ const node_telegram_bot_api_1 = __importDefault(require("node-telegram-bot-api")
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const operations_1 = __importStar(require("./routes/operations"));
-const token = "5913355394:AAHsMG4wXH3c6l5aehdRf_GLiQ7rUsIe48M";
+const token = process.env.TTOKEN;
 const app = (0, express_1.default)();
 const bot = new node_telegram_bot_api_1.default(token, { polling: true });
 // view engine setup
