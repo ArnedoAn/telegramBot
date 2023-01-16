@@ -299,7 +299,8 @@ bot.onText(/\/historial/, async (msg) => {
     bot.sendMessage(
       chatId,
       `Historial: \n${result.map(
-        ({ fecha, monto }) => `${formatDate(fecha)} || ${monto}\n`
+        ({ fecha, monto }: { fecha: Date; monto: Number }) =>
+          `${formatDate(fecha)} || ${monto}\n`
       )}`
     );
   } else {
