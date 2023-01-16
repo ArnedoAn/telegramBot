@@ -286,7 +286,7 @@ bot.onText(/\/borrartarjeta/, async (msg) => {
 
 bot.onText(/\/historial/, async (msg) => {
   if ((await verifyUser(msg.chat.id.toString())) == false) {
-    console.log("no tiene tarjeta");
+    console.log("no tiene tarjeta registrada");
     bot.sendMessage(
       msg.chat.id,
       `No tienes una tarjeta registrada, usa el comando /init para crear una.`
