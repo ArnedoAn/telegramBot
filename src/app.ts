@@ -18,6 +18,7 @@ import opRouter, {
   getHistorial,
 } from "./routes/operations";
 
+const TARIFA = 3000;
 const token = process.env.TTOKEN!;
 const app = express();
 const bot = new TelegramBot(token, { polling: true });
@@ -34,29 +35,19 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", opRouter);
 
-//Bot manage
-
-// bot.onText(/\/test/, (msg) => {
-//   const chatId = msg.chat.id;
-//   const options = {
-//     reply_markup: {
-//       keyboard: [[{ text: "Menos" }, { text: "Más" }]],
-//       resize_keyboard: true,
-//     },
-//   };
-//   bot.sendMessage(chatId, "Bienvenido al **bot**. ¿Qué deseas hacer? ", options,);
-// });
+//Bot management
+const options = {
+  reply_markup: {
+    keyboard: [[{ text: "+" }, { text: "-" }]],
+    resize_keyboard: true,
+  },
+};
 
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  const options = {
+  const options1 = {
     reply_markup: {
-      keyboard: [
-        [{ text: "/init" }, { text: "/saldo" }],
-        [{ text: "/más" }, { text: "/menos" }],
-        [{ text: "/actualizar" }, { text: "/historial" }],
-        [{ text: "/borrarhistorial" }, { text: "/borrartarjeta" }],
-      ],
+      keyboard: [[{ text: "/init" }]],
       resize_keyboard: true,
     },
   };
@@ -64,11 +55,17 @@ bot.onText(/\/start/, async (msg) => {
   if (siTarjeta != null) {
     bot.sendMessage(
       chatId,
-      `Ya tienes una tarjeta registrada, tu saldo actual es de ${siTarjeta.saldoDisponible}`,
+      `Ya tienes una tarjeta registrada, tienes ${Math.trunc(
+        siTarjeta.saldoDisponible / TARIFA
+      )} pasajes.\nTu saldo actual es de $${siTarjeta.saldoDisponible}`,
       options
     );
   } else {
-    bot.sendMessage(chatId, "Bienvenido al bot. ¿Qué deseas hacer?", options);
+    bot.sendMessage(
+      chatId,
+      "Bienvenido al bot. Presiona el botón para comenzar...",
+      options1
+    );
   }
 });
 
@@ -88,12 +85,27 @@ bot.onText(/\/init/, async (msg) => {
     });
     bot.onReplyToMessage(chatId, count.message_id, async (message) => {
       const text = message.text ? message.text : "0";
+      if (verifyNumber(text) == false) {
+        bot.sendMessage(chatId, `Ingresa un número válido. /init`);
+        return;
+      }
+      if (parseFloat(text) / TARIFA < 1) {
+        bot.sendMessage(
+          chatId,
+          `Ingresa una cantidad mayor o igual a ${TARIFA} (1 pasaje). /init`,
+          options
+        );
+        return;
+      }
       console.log(text);
       const result = await firstRun(parseFloat(text), chatId.toString());
       if (result) {
         await bot.sendMessage(
           chatId,
-          `Tu saldo actual es de ${parseFloat(text)}.`
+          `Tienes, ${Math.trunc(
+            parseFloat(text) / TARIFA
+          )} pasajes.\nTu saldo actual es de ${parseFloat(text)}.`,
+          options
         );
       } else {
         await bot.sendMessage(
@@ -105,9 +117,8 @@ bot.onText(/\/init/, async (msg) => {
   }
 });
 
-bot.onText(/\/más/, async (msg) => {
+bot.onText(/\+/, async (msg) => {
   if ((await verifyUser(msg.chat.id.toString())) == false) {
-    console.log("no tiene tarjeta");
     bot.sendMessage(
       msg.chat.id,
       `No tienes una tarjeta registrada, usa el comando /init para crear una.`
@@ -115,31 +126,50 @@ bot.onText(/\/más/, async (msg) => {
     return;
   }
   const chatId = msg.chat.id;
-  const ans = await bot.sendMessage(chatId, "Cantidad de pasajes", {
-    reply_markup: {
-      force_reply: true,
-    },
-  });
-  bot.onReplyToMessage(chatId, ans.message_id, async (message) => {
-    const resp = message.text ? parseFloat(message.text) : 0;
-    const result = await operation(resp, 3000, chatId.toString());
-    if (result.status === "success") {
-      await registerOperation(resp, chatId.toString());
-      bot.sendMessage(
-        chatId,
-        `Se han agregado ${
-          resp * 3000
-        } pesos a tu tarjeta, tu saldo actual es de ${result.saldo}.`
-      );
-    } else {
-      bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
-    }
-  });
+  const result = await operation(1, TARIFA, chatId.toString());
+  if (result) {
+    bot.sendMessage(
+      chatId,
+      `+1, tienes ${Math.trunc(
+        result.saldo! / TARIFA
+      )} pasajes.\nTu saldo actual es de ${result.saldo}.`,
+      options
+    );
+  } else {
+    bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
+  }
+});
+
+bot.onText(/\-/, async (msg) => {
+  if ((await verifyUser(msg.chat.id.toString())) == false) {
+    bot.sendMessage(
+      msg.chat.id,
+      `No tienes una tarjeta registrada, usa el comando /init para crear una.`
+    );
+    return;
+  }
+  const chatId = msg.chat.id;
+  const saldo = await getSaldo(chatId.toString());
+  if (verifySaldo(saldo!.saldoDisponible, 1) == false) {
+    bot.sendMessage(chatId, `No tienes saldo suficiente.`);
+    return;
+  }
+  const result = await operation(-1, TARIFA, chatId.toString());
+  if (result) {
+    bot.sendMessage(
+      chatId,
+      `-1, te quedan ${Math.trunc(
+        result.saldo! / TARIFA
+      )} pasajes.\nTu saldo actual es de ${result.saldo}.`,
+      options
+    );
+  } else {
+    bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
+  }
 });
 
 bot.onText(/\/mas/, async (msg) => {
   if ((await verifyUser(msg.chat.id.toString())) == false) {
-    console.log("no tiene tarjeta");
     bot.sendMessage(
       msg.chat.id,
       `No tienes una tarjeta registrada, usa el comando /init para crear una.`
@@ -147,21 +177,26 @@ bot.onText(/\/mas/, async (msg) => {
     return;
   }
   const chatId = msg.chat.id;
-  const ans = await bot.sendMessage(chatId, "Cantidad de pasajes", {
+  const ans = await bot.sendMessage(chatId, "Cantidad de pasajes:", {
     reply_markup: {
       force_reply: true,
     },
   });
   bot.onReplyToMessage(chatId, ans.message_id, async (message) => {
+    if (verifyNumber(message.text!) == false) {
+      bot.sendMessage(chatId, `Ingresa un número válido. /mas`);
+      return;
+    }
     const resp = message.text ? parseFloat(message.text) : 0;
-    const result = await operation(resp, 3000, chatId.toString());
+    const result = await operation(resp, TARIFA, chatId.toString());
     if (result.status === "success") {
       await registerOperation(resp, chatId.toString());
       bot.sendMessage(
         chatId,
-        `Se han agregado ${
-          resp * 3000
-        } pesos a tu tarjeta, tu saldo actual es de ${result.saldo}.`
+        `Agregado. Tienes ${Math.trunc(
+          result.saldo! / TARIFA
+        )} pasajes.\nTu saldo actual es de $${result.saldo}.`,
+        options
       );
     } else {
       bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
@@ -185,15 +220,28 @@ bot.onText(/\/menos/, async (msg) => {
     },
   });
   bot.onReplyToMessage(chatId, ans.message_id, async (message) => {
+    if (verifyNumber(message.text!) == false) {
+      bot.sendMessage(chatId, `Ingresa un número válido. /menos`);
+      return;
+    }
+    const saldo = await getSaldo(chatId.toString());
     const resp = message.text ? parseFloat(message.text) : 0;
-    const result = await operation(resp, 3000 * -1, chatId.toString());
+    if (verifySaldo(saldo?.saldoDisponible!, resp * TARIFA) == false) {
+      bot.sendMessage(
+        chatId,
+        `No tienes saldo suficiente.\nTu saldo actual es de ${saldo?.saldoDisponible}.`,
+        options
+      );
+      return;
+    }
+    const result = await operation(resp, TARIFA * -1, chatId.toString());
     if (result.status === "success") {
       await registerOperation(resp * -1, chatId.toString());
       bot.sendMessage(
         chatId,
-        `Se han restado ${
-          resp * 3000 * -1
-        } pesos a tu tarjeta, tu saldo actual es de ${result.saldo}.`
+        `Restado, te quedan ${Math.trunc(
+          result.saldo! / TARIFA
+        )} pasajes.\nTu saldo actual es de $${result.saldo}.`
       );
     } else {
       bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
@@ -218,7 +266,13 @@ bot.onText(/\/saldo/, async (msg) => {
       `No tienes una tarjeta registrada, usa el comando /init para crear una.`
     );
   } else {
-    bot.sendMessage(chatId, `Tu saldo actual es de ${result.saldoDisponible}.`);
+    bot.sendMessage(
+      chatId,
+      `Tienes ${Math.trunc(
+        result.saldoDisponible / TARIFA
+      )} pasajes. \nTu saldo actual es de $${result.saldoDisponible}.`,
+      options
+    );
   }
 });
 
@@ -238,10 +292,27 @@ bot.onText(/\/actualizar/, async (msg) => {
     },
   });
   bot.onReplyToMessage(chatId, ans.message_id, async (message) => {
+    if (verifyNumber(message.text!) == false) {
+      bot.sendMessage(chatId, `Ingresa un número válido. /actualizar`);
+      return;
+    }
     const resp = message.text ? parseFloat(message.text) : 0;
+    if (resp / TARIFA < 1) {
+      bot.sendMessage(
+        chatId,
+        `Ingresa una cantidad mayor o igual a ${TARIFA} (1 pasaje). /actualizar`,
+        options
+      );
+      return;
+    }
     const result = await setSaldo(resp, chatId.toString());
     if (result) {
-      bot.sendMessage(chatId, `Actualizado. Tu saldo actual es de ${resp}.`);
+      bot.sendMessage(
+        chatId,
+        `Actualizado, tienes ${
+          resp / TARIFA
+        } pasajes.\nTu saldo actual es de ${resp}.`
+      );
     } else {
       bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo`);
     }
@@ -295,14 +366,15 @@ bot.onText(/\/historial/, async (msg) => {
   }
   const chatId = msg.chat.id;
   const result = await getHistorial(chatId.toString());
+  const string = result!
+    .map(
+      ({ fecha, monto }: { fecha: Date; monto: Number }) =>
+        `Fecha: ${formatDate(fecha)}\nMonto: $${monto}\n\n`
+    )
+    .join("");
   if (result) {
-    bot.sendMessage(
-      chatId,
-      `Historial: \n${result.map(
-        ({ fecha, monto }: { fecha: Date; monto: Number }) =>
-          `${formatDate(fecha)} || ${monto}\n`
-      )}`
-    );
+    bot.sendMessage(chatId, `Historial de transacciones:`);
+    bot.sendMessage(chatId, string, options);
   } else {
     bot.sendMessage(chatId, `Ha ocurrido un error, intenta de nuevo.`);
   }
@@ -345,6 +417,25 @@ function formatDate(date: Date) {
   return `${day < 10 ? "0" + day : day}/${monthNames[monthIndex]}/${year} ${
     hours + 5
   }:${minutes}:${seconds}`;
+}
+
+//funcion para verificar que la operacion no de negativo
+function verifySaldo(saldo: number, monto: number) {
+  if (saldo - monto < 0) {
+    console.log("saldo insuficiente");
+    return false;
+  } else {
+    return true;
+  }
+}
+
+//funcion para verificar que la entrada sea un numero
+function verifyNumber(monto: string) {
+  if (isNaN(parseFloat(monto)) || parseFloat(monto) < 0) {
+    return false;
+  } else {
+    return true;
+  }
 }
 
 // catch 404 and forward to error handler
