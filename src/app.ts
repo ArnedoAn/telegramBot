@@ -150,7 +150,7 @@ bot.onText(/\-/, async (msg) => {
   }
   const chatId = msg.chat.id;
   const saldo = await getSaldo(chatId.toString());
-  if (verifySaldo(saldo!.saldoDisponible, 1) == false) {
+  if (verifySaldo(saldo!.saldoDisponible, 1 * TARIFA) == false) {
     bot.sendMessage(chatId, `No tienes saldo suficiente.`);
     return;
   }
