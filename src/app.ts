@@ -128,6 +128,7 @@ bot.onText(/\+/, async (msg) => {
   const chatId = msg.chat.id;
   const result = await operation(1, TARIFA, chatId.toString());
   if (result) {
+    await registerOperation(-1, chatId.toString());
     bot.sendMessage(
       chatId,
       `+1, tienes ${Math.trunc(
@@ -156,6 +157,7 @@ bot.onText(/\-/, async (msg) => {
   }
   const result = await operation(-1, TARIFA, chatId.toString());
   if (result) {
+    await registerOperation(-1, chatId.toString());
     bot.sendMessage(
       chatId,
       `-1, te quedan ${Math.trunc(
