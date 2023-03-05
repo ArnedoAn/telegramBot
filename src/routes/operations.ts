@@ -6,6 +6,11 @@ const prisma = new PrismaClient();
 const TARIFA = 3000;
 
 /* GET users listing. */
+
+router.get("/home", async (req: Request, res: Response, next) => {
+  res.render("welcome", { title: "Bienvenido a TranscaBot" });
+});
+
 router.get(
   "/api/more/:count/:id",
   async (req: Request, res: Response, next) => {

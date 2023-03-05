@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import logger from "morgan";
 import TelegramBot from "node-telegram-bot-api";
 import * as dotenv from "dotenv";
+import http from "http";
+
 dotenv.config();
 
 import opRouter, {
@@ -25,7 +27,7 @@ const bot = new TelegramBot(token, { polling: true });
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "jade");
+app.set("view engine", "pug");
 
 app.use(logger("dev"));
 app.use(express.json());
@@ -456,8 +458,10 @@ app.use(function (err: any, req: Request, res: Response, next: any) {
   res.render("error");
 });
 
-app.listen(process.env.PORT, () => {
-  console.log("Server runing");
+const httpServer = http.createServer(app);
+const httpPort = 3000;
+httpServer.listen(httpPort, () => {
+  console.log(`Server HTTP running on ${httpPort}`);
 });
 
 export default app;
