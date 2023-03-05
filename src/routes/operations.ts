@@ -7,8 +7,9 @@ const TARIFA = 3000;
 
 /* GET users listing. */
 
-router.get("/home", async (req: Request, res: Response, next) => {
-  res.render("welcome", { title: "Bienvenido a TranscaBot" });
+
+router.get("/", async (req: Request, res: Response, next) => {
+  res.render("welcome");
 });
 
 router.get(
@@ -183,7 +184,7 @@ export async function getHistorial(id: string) {
       },
     });
     console.log(result);
-    return (result);
+    return result;
   } catch (err) {
     console.log(err);
   }

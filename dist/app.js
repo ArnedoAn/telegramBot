@@ -372,7 +372,7 @@ app.use(function (err, req, res, next) {
     res.render("error");
 });
 const httpServer = http_1.default.createServer(app);
-const httpPort = 80;
+const httpPort = 3000;
 httpServer.listen(httpPort, () => {
     console.log(`Server HTTP running on ${httpPort}`);
 });
