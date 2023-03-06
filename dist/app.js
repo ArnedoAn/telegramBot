@@ -50,13 +50,13 @@ const token = process.env.TTOKEN;
 const app = (0, express_1.default)();
 const bot = new node_telegram_bot_api_1.default(token, { polling: true });
 // view engine setup
-app.set("views", path_1.default.join(__dirname, "views"));
+app.set("views", path_1.default.join(__dirname, "../src/views"));
 app.set("view engine", "jade");
 app.use((0, morgan_1.default)("dev"));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: false }));
 app.use((0, cookie_parser_1.default)());
-app.use(express_1.default.static(path_1.default.join(__dirname, "public")));
+app.use(express_1.default.static(path_1.default.join(__dirname, "../src/public")));
 app.use("/", operations_1.default);
 //Bot management
 const options = {

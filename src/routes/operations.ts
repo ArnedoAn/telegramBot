@@ -77,10 +77,6 @@ router.get("/start/:count/:id", async (req: Request, res: Response, next) => {
   res.send(result);
 });
 
-router.get("/", (req: Request, res: Response, next) => {
-  res.send("respond with a resource");
-});
-
 export async function operation(count: number, TARIFA: number, id: string) {
   try {
     const total = count * TARIFA;

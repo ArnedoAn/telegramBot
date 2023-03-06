@@ -19,10 +19,7 @@ const router = express_1.default.Router();
 const prisma = new client_1.PrismaClient();
 const TARIFA = 3000;
 /* GET users listing. */
-router.get("/hello", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send("Hola mundo!");
-}));
-router.get("/home", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+router.get("/", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     res.render("welcome");
 }));
 router.get("/api/more/:count/:id", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
@@ -85,9 +82,6 @@ router.get("/start/:count/:id", (req, res, next) => __awaiter(void 0, void 0, vo
     console.log(result);
     res.send(result);
 }));
-router.get("/", (req, res, next) => {
-    res.send("respond with a resource");
-});
 function operation(count, TARIFA, id) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
