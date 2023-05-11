@@ -5,7 +5,8 @@ import cookieParser from "cookie-parser";
 import logger from "morgan";
 import TelegramBot from "node-telegram-bot-api";
 import * as dotenv from "dotenv";
-import http from "http";
+import https from "https";
+import fs from "fs";
 
 dotenv.config();
 
@@ -458,10 +459,13 @@ app.use(function (err: any, req: Request, res: Response, next: any) {
   res.render("error");
 });
 
-const httpServer = http.createServer(app);
-const httpPort = 3000;
-httpServer.listen(httpPort, () => {
-  console.log(`Server HTTP running on ${httpPort}`);
-});
+const serverOptions = {
+  key: fs.readFileSync("/etc/letsencrypt/live/api.semard.co/privkey.pem"),
+  cert: fs.readFileSync("/etc/letsencrypt/live/api.semard.co/fullchain.pem"),
+};
+
+https
+  .createServer(serverOptions, app)
+  .listen(3000, () => console.log("Server running on port 3000"));
 
 export default app;
